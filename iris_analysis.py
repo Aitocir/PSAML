@@ -13,12 +13,12 @@ sc = SparkContext("local", "Simple App")
 sqlContext = SQLContext(sc)
 
 # Load the data stored in LIBSVM format as a DataFrame.
-# data = sqlContext.read.format("libsvm").load("data/mllib/sample_iris_data.txt")
-# data = sqlContext.read.format("csv").load("data/mllib/iris.csv")
+# data = sqlContext.read.format("libsvm").load("data/sample_iris_data.txt")
+# data = sqlContext.read.format("csv").load("data/iris.csv")
 
 # header=false so the columns aren't named after the first row values
 # inferSchema=true so that data is read in as correct datatype, not just strings
-data = sqlContext.read.load('data/mllib/iris.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
+data = sqlContext.read.load('data/iris.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
 print("DATA:\n")
 print(data)
 
@@ -33,7 +33,7 @@ featureIndexer = VectorIndexer(inputCol="features", outputCol="indexed")
 classIndexer = StringIndexer(inputCol="C4", outputCol="label")
 
 # Read in data for sensitivity analysis
-testData = sqlContext.read.load('data/mllib/iris_test_data.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
+testData = sqlContext.read.load('data/iris_test_data.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
 
 # Train a DecisionTree model.
 dt = DecisionTreeRegressor(featuresCol="indexed", labelCol="label")
