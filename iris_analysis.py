@@ -39,7 +39,7 @@ testData = sqlContext.read.load('data/iris_test_data.csv', format='com.databrick
 dt = DecisionTreeRegressor(featuresCol="indexed", labelCol="label")
 
 # Chain indexer and tree in a Pipeline
-pipeline = Pipeline(stages=[featureIndexer, classIndexer, dt])
+pipeline = Pipeline(stages=[assembler, featureIndexer, classIndexer, dt])
 
 # Train model.  This also runs the indexer.
 model = pipeline.fit(data)
