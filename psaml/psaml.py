@@ -8,12 +8,6 @@ from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
-# init
-# sc = SparkContext("local", "Simple App")
-
-# Load the data stored in LIBSVM format as a DataFrame.
-# data = sqlContext.read.format("libsvm").load("data/sample_iris_data.txt")
-# data = sqlContext.read.format("csv").load("data/iris.csv")
 
 def doContinuousInputAnalysis(sc, model, expSensitivity, ctrlSensitivity, dataInfo):
 
@@ -90,15 +84,3 @@ def doContinuousInputAnalysis(sc, model, expSensitivity, ctrlSensitivity, dataIn
    # return varianceData  # but for now, just return predictions so the code actually interprets
    return predictions;
    
-
-   # Select example rows to display.
-   # predictions.select("prediction", "label", "features").show()  # opt param: number of records to show
-
-   # Select (prediction, true label) and compute test error
-   # evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="rmse")
-   # rmse = evaluator.evaluate(predictions)
-   # print("Root Mean Squared Error (RMSE) on test data = %g" % rmse)
-
-   # treeModel = model.stages[1]
-   # summary only
-   # print(treeModel)
