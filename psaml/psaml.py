@@ -9,6 +9,41 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 
+# 1b) Generate test data (work item #4)
+def generate_test_data(exp_sensitivity, ctrl_sensitivity, data_info)
+    "build the test data from the prepped cols_* DataFrames which should make it easy"
+    
+    #  gather the cols to analyze first!
+    #  exp_cols = data_info.where(data_info.shouldAnalyze = True)
+    #  all_cols = data_info.collect()
+    #
+    #   <<declare DataFrame with same columns as the input data>>
+    #  for c in range(0, ctrl_sensitivity):
+    #      for exp_var in exp_cols:
+    #          for e in range(0, exp_sensitivity):
+    #              
+    #  
+    #  testData = a new dataframe, whose column names = all values from the colName col from dataInfo
+    #  for ( x : 0 ... ctrlSensitivity ), inclusive
+    #     foreach ( varCol : varCol.shouldAnalyze == true )
+                    #        for ( y : 0 ... expSensitivity ), inclusive
+                        #           load record into testData
+                            #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrlSensitivity))
+                                #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrlSensitivity))
+                                    #           #  value loaded into the class column does NOT matter
+                                        #
+    
+    #  DataFrame.count() gives me number of rows (useful for looping)
+    #  DataFrame.collect() gives me a list of Rows 
+    #  Row members can be accessed by name, Row.colName, Row.minValue, etc
+    #  DataFrame.foreach(f) runs the f function on each Row of the DataFrame
+    #  DataFrame.printSchema() gives string of ASCII tree representing DataFrame, may be useful for doing input validation human-legible
+    #  DataFrame.schema() gives types within DataFrame, useful for asserting valid DataFrame format    
+    #  DataFrame.select(cols) gives a new DataFrame limited to the provided columns
+    #  DataFrame.selectExpr()
+    #  DataFrame.take(n) return the first n Rows as a list of Rows
+    #  DataFrame.where() is an alias for .filter() which takes string conditions to filter Rows
+
 def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, data_info):
     # -1) create SQLContext
     sql_context = SQLContext(sc)
