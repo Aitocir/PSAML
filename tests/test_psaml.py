@@ -25,7 +25,7 @@ sql_context = SQLContext(sc)
 
 # header=false so the columns aren't named after the first row values
 # inferSchema=true so that data is read in as correct data type, not just strings
-data = sql_context.read.load('resources/iris.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
+data = sql_context.read.load('tests/resources/iris.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
 
 # now we create a vector of the input columns so they can be one column
 ignore = ['C4']  # ignore the output column
@@ -33,11 +33,12 @@ assembler = VectorAssembler(inputCols=[x for x in data.columns if x not in ignor
 
 # Automatically identify categorical features, and index them.
 # We specify maxCategories so features with > 4 distinct values are treated as continuous.
+# (maxCategories is not set at the moment, however)
 feature_indexer = VectorIndexer(inputCol="features", outputCol="indexed")
 class_indexer = StringIndexer(inputCol="C4", outputCol="label")
 
 # Read in data for sensitivity analysis
-test_data = sql_context.read.load('resources/iris_test_data.csv',
+test_data = sql_context.read.load('tests/resources/iris_test_data.csv',
                                   format='com.databricks.spark.csv',
                                   header='false',
                                   inferSchema='true')
@@ -52,8 +53,9 @@ pipeline = Pipeline(stages=[assembler, feature_indexer, class_indexer, dt])
 model = pipeline.fit(data)
 
 # Make predictions.
-predictions = psaml.do_continuous_input_analysis(sc, model, 1, 1, test_data)
+predictions = psaml.do_continuous_input_analysis(sc, model, 1, 1, test_data.drop('C4'))
+
+# print (predictions)
 
 # Select example rows to display.
-predictions.select("prediction", "label", "features").show()  # opt param: number of records to show
-
+predictions.select("prediction", "features").show()  # opt param: number of records to show

@@ -10,7 +10,7 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 
 # 1b) Generate test data (work item #4)
-def generate_test_data(exp_sensitivity, ctrl_sensitivity, data_info)
+def generate_test_data(exp_sensitivity, ctrl_sensitivity, data_info):
     "build the test data from the prepped cols_* DataFrames which should make it easy"
     
     #  gather the cols to analyze first!
@@ -24,12 +24,12 @@ def generate_test_data(exp_sensitivity, ctrl_sensitivity, data_info)
     #              
     #  
     #  testData = a new dataframe, whose column names = all values from the colName col from dataInfo
-    #  for ( x : 0 ... ctrlSensitivity ), inclusive
+    #  for ( x : 0 ... ctrl_sensitivity ), inclusive
     #     foreach ( varCol : varCol.shouldAnalyze == true )
-                    #        for ( y : 0 ... expSensitivity ), inclusive
+                    #        for ( y : 0 ... exp_sensitivity ), inclusive
                         #           load record into testData
-                            #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrlSensitivity))
-                                #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrlSensitivity))
+                            #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrl_sensitivity))
+                                #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrl_sensitivity))
                                     #           #  value loaded into the class column does NOT matter
                                         #
     
