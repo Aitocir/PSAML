@@ -10,19 +10,23 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 
 # 1b) Generate test data (work item #4)
-def generate_test_data(exp_sensitivity, ctrl_sensitivity, data_info)
+def generate_test_data(sc, exp_sensitivity, ctrl_sensitivity, data_info)
     "build the test data from the prepped cols_* DataFrames which should make it easy"
+    
+    # 
     
     #  gather the cols to analyze first!
     #  exp_cols = data_info.where(data_info.shouldAnalyze = True)
     #  all_cols = data_info.collect()
     #
-    #   <<declare DataFrame with same columns as the input data>>
+    #  test_list = []
     #  for c in range(0, ctrl_sensitivity):
     #      for exp_var in exp_cols:
     #          for e in range(0, exp_sensitivity):
-    #              
-    #  
+    #              test_row = ()
+    #              test_list.append(test_row)
+    #  << need to make the schema needed in line below >>
+    #  test_data = sc.createDataFrame(test_list, schema=?) #  need to set schema to same column headers as data would be
     #  testData = a new dataframe, whose column names = all values from the colName col from dataInfo
     #  for ( x : 0 ... ctrlSensitivity ), inclusive
     #     foreach ( varCol : varCol.shouldAnalyze == true )
