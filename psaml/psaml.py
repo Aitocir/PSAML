@@ -11,19 +11,15 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 # Helper: create data_info DataFrame from sample data
 def make_data_info(sql, sample_data, cols_analyze, col_class):
-    "create the data_info DataFrame the analysis function needs from sample data"
-    
+    "create the data_info DataFrame the analysis function needs from sample data"    
     #  start by ignoring the class column
     vars_only = sample_data.drop(col_class)
-    
     #  identify the mix and max for each column
     sample_data_info = vars_only.describe().collect()
     min_row = sample_data_info[3]
     max_row = sample_data_info[4]
-    
     #  create schema for our final DataFrame, one Row at a time
     sample_row = Row("colName", "minValue", "maxValue", "shouldAnalyze")
-    
     #  build Python list of Rows of column names and their metadata
     sample_list = []
     cols_analyze_set = set(cols_analyze)
@@ -32,56 +28,44 @@ def make_data_info(sql, sample_data, cols_analyze, col_class):
         should = (col in cols_analyze_set)
         sample_list.append( sample_row( col, float(min_row[idx]), float(max_row[idx]), should ) )
         idx = idx + 1
-        
     #  create the DataFrame and ship it back
     return sql.createDataFrame(sample_list)
 
     
 
 # 1b) Generate test data (work item #4)
-def generate_analysis_data(sc, exp_sensitivity, ctrl_sensitivity, data_info):
+def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
     "build the test data from the prepped cols_* DataFrames which should make it easy"
-    
     #  gather the cols to analyze first!
     exp_cols = data_info.where(data_info.shouldAnalyze==True).collect()
     all_cols = data_info.collect()
     col_names = []
     for r in all_cols:
         col_names.append(r.colName)
-    
     test_list = []
     #  for all values to hold control variables at...
     for c in range(0, ctrl_sensitivity):
-    
         #  for each variable we want to analyze...
-        for exp_var in exp_cols:  #   THIS IS WHERE I STOPPED PYSPARK CHECKING THIS CODE, START AGAIN HERE
-        
+        for exp_var in exp_cols: 
             #  for all values to hold focus variable to...
             for e in range(0, exp_sensitivity):
-            
                 test_row = Row(col_names)
                 test_vals = []
-                
                 #  for each value to be found within a Row of our output DataFrame...
-                for col in all_cols:
-                
+                for col in col_names:
                     #  get min and max values for the variable in question
-                    min = data_info.select(colName=col).collect()[0].minValue
-                    max = data_info.select(colName=col).collect()[0].maxValue
-                    
+                    min = data_info.where(data_info.colName==col).first().minValue
+                    max = data_info.where(data_info.colName==col).first().maxValue
                     #  set multiplicative variables to exp or ctrl var 
                     factor = c
                     factorMax = ctrl_sensitivity
-                    if exp_var == col
+                    if exp_var == col:
                         factor = e
                         factorMax = exp_sensitivity
-                        
                     test_vals.append( min + ((max - min) * (factor / factorMax)) )
-                    
                 test_list.append(test_row(test_vals))
-    
     #  bundle all of this into a single DataFrame and ship it back!
-    test_data = sc.createDataFrame(test_list, schema=col_names) #  need to set schema to same column headers as data would be
+    test_data = sql.createDataFrame(test_list, schema=col_names) #  THIS LINE CURRENTLY FAILS, NOT CORRECTLY USING THIS CALL
     return test_data
 
 
