@@ -2,20 +2,49 @@
 # Iris Analysis
 #
 from pyspark import SparkContext
-from pyspark.sql import SQLContext
+from pyspark.sql import *
 from pyspark.ml import Pipeline
 from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 
+# Helper: create data_info DataFrame from sample data
+def make_data_info(sql, sample_data, cols_analyze, col_class):
+    "create the data_info DataFrame the analysis function needs from sample data"
+    
+    #  start by ignoring the class column
+    vars_only = sample_data.drop(col_class)
+    
+    #  identify the mix and max for each column
+    sample_data_info = vars_only.describe().collect()
+    min_row = sample_data_info[3]
+    max_row = sample_data_info[4]
+    
+    #  create schema for our final DataFrame, one Row at a time
+    sample_row = Row("colName", "minValue", "maxValue", "shouldAnalyze")
+    
+    #  build Python list of Rows of column names and their metadata
+    sample_list = []
+    cols_analyze_set = set(cols_analyze)
+    idx = 1
+    for col in vars_only.columns:
+        should = (col in cols_analyze_set)
+        sample_list.append( sample_row( col, float(min_row[idx]), float(max_row[idx]), should ) )
+        idx = idx + 1
+        
+    #  create the DataFrame and ship it back
+    return sql.createDataFrame(sample_list)
+
+    
+
 # 1b) Generate test data (work item #4)
 def generate_analysis_data(sc, exp_sensitivity, ctrl_sensitivity, data_info):
     "build the test data from the prepped cols_* DataFrames which should make it easy"
     
     #  gather the cols to analyze first!
-    exp_cols = data_info.where(data_info.shouldAnalyze = True)
-    all_cols = data_info.where(data_info.isClass = False)
+    exp_cols = data_info.where(data_info.shouldAnalyze==True).collect()
+    all_cols = data_info.collect()
     col_names = []
     for r in all_cols:
         col_names.append(r.colName)
@@ -25,7 +54,7 @@ def generate_analysis_data(sc, exp_sensitivity, ctrl_sensitivity, data_info):
     for c in range(0, ctrl_sensitivity):
     
         #  for each variable we want to analyze...
-        for exp_var in exp_cols:
+        for exp_var in exp_cols:  #   THIS IS WHERE I STOPPED PYSPARK CHECKING THIS CODE, START AGAIN HERE
         
             #  for all values to hold focus variable to...
             for e in range(0, exp_sensitivity):
