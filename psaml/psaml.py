@@ -10,33 +10,52 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 
 # 1b) Generate test data (work item #4)
-def generate_test_data(sc, exp_sensitivity, ctrl_sensitivity, data_info)
+def generate_analysis_data(sc, exp_sensitivity, ctrl_sensitivity, data_info):
     "build the test data from the prepped cols_* DataFrames which should make it easy"
     
-    # 
-    
     #  gather the cols to analyze first!
-    #  exp_cols = data_info.where(data_info.shouldAnalyze = True)
-    #  all_cols = data_info.collect()
-    #
-    #  test_list = []
-    #  for c in range(0, ctrl_sensitivity):
-    #      for exp_var in exp_cols:
-    #          for e in range(0, exp_sensitivity):
-    #              test_row = ()
-    #              test_list.append(test_row)
-    #  << need to make the schema needed in line below >>
-    #  test_data = sc.createDataFrame(test_list, schema=?) #  need to set schema to same column headers as data would be
-    #  testData = a new dataframe, whose column names = all values from the colName col from dataInfo
-    #  for ( x : 0 ... ctrl_sensitivity ), inclusive
-    #     foreach ( varCol : varCol.shouldAnalyze == true )
-                    #        for ( y : 0 ... exp_sensitivity ), inclusive
-                        #           load record into testData
-                            #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrl_sensitivity))
-                                #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrl_sensitivity))
-                                    #           #  value loaded into the class column does NOT matter
-                                        #
+    exp_cols = data_info.where(data_info.shouldAnalyze = True)
+    all_cols = data_info.where(data_info.isClass = False)
+    col_names = []
+    for r in all_cols:
+        col_names.append(r.colName)
     
+    test_list = []
+    #  for all values to hold control variables at...
+    for c in range(0, ctrl_sensitivity):
+    
+        #  for each variable we want to analyze...
+        for exp_var in exp_cols:
+        
+            #  for all values to hold focus variable to...
+            for e in range(0, exp_sensitivity):
+            
+                test_row = Row(col_names)
+                test_vals = []
+                
+                #  for each value to be found within a Row of our output DataFrame...
+                for col in all_cols:
+                
+                    #  get min and max values for the variable in question
+                    min = data_info.select(colName=col).collect()[0].minValue
+                    max = data_info.select(colName=col).collect()[0].maxValue
+                    
+                    #  set multiplicative variables to exp or ctrl var 
+                    factor = c
+                    factorMax = ctrl_sensitivity
+                    if exp_var == col
+                        factor = e
+                        factorMax = exp_sensitivity
+                        
+                    test_vals.append( min + ((max - min) * (factor / factorMax)) )
+                    
+                test_list.append(test_row(test_vals))
+    
+    #  bundle all of this into a single DataFrame and ship it back!
+    test_data = sc.createDataFrame(test_list, schema=col_names) #  need to set schema to same column headers as data would be
+    return test_data
+
+
     #  DataFrame.count() gives me number of rows (useful for looping)
     #  DataFrame.collect() gives me a list of Rows 
     #  Row members can be accessed by name, Row.colName, Row.minValue, etc
@@ -79,17 +98,8 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     #
     # 1) Generate test data
     #
-    #  TODO: generate test data based on a collection of mins, maxs
-    #
-    #  testData = a new dataframe, whose column names = all values from the colName col from dataInfo
-    #  for ( x : 0 ... ctrlSensitivity ), inclusive
-    #     foreach ( varCol : varCol.shouldAnalyze == true )
-    #        for ( y : 0 ... expSensitivity ), inclusive
-    #           load record into testData
-    #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrlSensitivity))
-    #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrlSensitivity))
-    #           #  value loaded into the class column does NOT matter
-    #
+
+    #  test_data = generate_analysis_data(sc, exp_sensitivity, ctrl_sensitivity, data_info)
 
     # ##########################################################################################################
     #
