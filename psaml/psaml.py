@@ -28,12 +28,12 @@ def generate_test_data(sc, exp_sensitivity, ctrl_sensitivity, data_info)
     #  << need to make the schema needed in line below >>
     #  test_data = sc.createDataFrame(test_list, schema=?) #  need to set schema to same column headers as data would be
     #  testData = a new dataframe, whose column names = all values from the colName col from dataInfo
-    #  for ( x : 0 ... ctrlSensitivity ), inclusive
+    #  for ( x : 0 ... ctrl_sensitivity ), inclusive
     #     foreach ( varCol : varCol.shouldAnalyze == true )
-                    #        for ( y : 0 ... expSensitivity ), inclusive
+                    #        for ( y : 0 ... exp_sensitivity ), inclusive
                         #           load record into testData
-                            #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrlSensitivity))
-                                #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrlSensitivity))
+                            #           #  set all values to minValue + ((maxValue - minValue) * (x / ctrl_sensitivity))
+                                #           #  manually set varCol to minValue + ((maxValue - minValue) * (y / ctrl_sensitivity))
                                     #           #  value loaded into the class column does NOT matter
                                         #
     
