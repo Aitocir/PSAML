@@ -9,7 +9,7 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
 
-# Helper: create data_info DataFrame from sample data
+# Helper: create data_info DataFrame from sample data (work item #5)
 def make_data_info(sql, sample_data, cols_analyze, col_class):
     "create the data_info DataFrame the analysis function needs from sample data"    
     #  start by ignoring the class column
@@ -30,7 +30,6 @@ def make_data_info(sql, sample_data, cols_analyze, col_class):
         idx = idx + 1
     #  create the DataFrame and ship it back
     return sql.createDataFrame(sample_list)
-
     
 
 # 1b) Generate test data (work item #4)
@@ -42,6 +41,13 @@ def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
     col_names = []
     for r in all_cols:
         col_names.append(r.colName)
+    #  gather the min/max values once for efficiency
+    mins = {}
+    maxs = {}
+    for col in col_names:
+        colrow = data_info.where(data_info.colName==col).first()
+        mins[col] = colrow.minValue
+        maxs[col] = colrow.maxValue
     test_list = []
     #  for all values to hold control variables at...
     for c in range(0, ctrl_sensitivity+1):
@@ -54,8 +60,8 @@ def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
                 #  for each value to be found within a Row of our output DataFrame...
                 for col in col_names:
                     #  get min and max values for the variable in question
-                    min = data_info.where(data_info.colName==col).first().minValue
-                    max = data_info.where(data_info.colName==col).first().maxValue
+                    min = mins[col]
+                    max = maxs[col]
                     #  set multiplicative variables to exp or ctrl var 
                     factor = float(c)
                     factorMax = float(ctrl_sensitivity)
