@@ -44,12 +44,12 @@ def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
         col_names.append(r.colName)
     test_list = []
     #  for all values to hold control variables at...
-    for c in range(0, ctrl_sensitivity):
+    for c in range(0, ctrl_sensitivity+1):
         #  for each variable we want to analyze...
         for exp_var in exp_cols: 
             #  for all values to hold focus variable to...
-            for e in range(0, exp_sensitivity):
-                test_row = Row(col_names)
+            for e in range(0, exp_sensitivity+1):
+                #  test_row = Row(col_names)
                 test_vals = []
                 #  for each value to be found within a Row of our output DataFrame...
                 for col in col_names:
@@ -57,15 +57,18 @@ def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
                     min = data_info.where(data_info.colName==col).first().minValue
                     max = data_info.where(data_info.colName==col).first().maxValue
                     #  set multiplicative variables to exp or ctrl var 
-                    factor = c
-                    factorMax = ctrl_sensitivity
-                    if exp_var == col:
-                        factor = e
-                        factorMax = exp_sensitivity
+                    factor = float(c)
+                    factorMax = float(ctrl_sensitivity)
+                    if exp_var.colName == col:
+                        factor = float(e)
+                        factorMax = float(exp_sensitivity)
+                    #  hard-wiring factorMax to 1 so that a 0 results in values only analyzed at 0% of possible value range
+                    if factorMax == 0:
+                        factorMax = float(1)
                     test_vals.append( min + ((max - min) * (factor / factorMax)) )
-                test_list.append(test_row(test_vals))
+                test_list.append(test_vals)
     #  bundle all of this into a single DataFrame and ship it back!
-    test_data = sql.createDataFrame(test_list, schema=col_names) #  THIS LINE CURRENTLY FAILS, NOT CORRECTLY USING THIS CALL
+    test_data = sql.createDataFrame(test_list, schema=col_names)
     return test_data
 
 
