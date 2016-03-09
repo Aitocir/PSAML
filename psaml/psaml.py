@@ -102,13 +102,13 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     #  assert dataInfo (DataFrame of the following format, one row for each column in the data model works on):
     #
     #                                         DataFrame of Data columns
-    #                     _________________________________________________________________
-    # Column purpose     | colName   | minValue  | maxValue  | shouldAnalyze   | isClass   |
-    #                    |-----------|-----------|-----------|-----------------|-----------|
-    # Column type        | string    | numeral   | numeral   | boolean         | boolean   |
-    #                    |-----------|-----------|-----------|-----------------|-----------|
-    # Example record     | "petalW"  | 4.3       | 7.9       | true            | false     |
-    #                    |___________|___________|___________|_________________|___________|
+    #                     _____________________________________________________
+    # Column purpose     | colName   | minValue  | maxValue  | shouldAnalyze   |
+    #                    |-----------|-----------|-----------|-----------------|
+    # Column type        | string    | numeral   | numeral   | boolean         |
+    #                    |-----------|-----------|-----------|-----------------|
+    # Example record     | "petalW"  | 4.3       | 7.9       | true            |
+    #                    |___________|___________|___________|_________________|
     #
     try:
         assert (exp_sensitivity > 0), "Experiment Sensitivity must be a positive integer"
@@ -121,7 +121,7 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     # 1) Generate test data
     #
 
-    #  test_data = generate_analysis_data(sc, exp_sensitivity, ctrl_sensitivity, data_info)
+    #  test_data = generate_analysis_data(sql_context, exp_sensitivity, ctrl_sensitivity, data_info)
 
     # ##########################################################################################################
     #
