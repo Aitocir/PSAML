@@ -97,8 +97,8 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     #
     # 0) Verify input
     #
-    #  assert expSensitivity > 0 (int)
-    #  assert ctrlSensitivity > 0 (int)
+    #  assert expSensitivity >= 0 (int)
+    #  assert ctrlSensitivity >= 0 (int)
     #  assert dataInfo (DataFrame of the following format, one row for each column in the data model works on):
     #
     #                                         DataFrame of Data columns
@@ -111,8 +111,8 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     #                    |___________|___________|___________|_________________|
     #
     try:
-        assert (exp_sensitivity > 0), "Experiment Sensitivity must be a positive integer"
-        assert (ctrl_sensitivity > 0), "Control Variable Sensitivity must be a positive integer"
+        assert (exp_sensitivity >= 0), "Experiment Sensitivity must be a non-negative integer"
+        assert (ctrl_sensitivity >= 0), "Control Variable Sensitivity must be a non-negative integer"
     except AssertionError as e:
         raise ValueError(e.args)
 
