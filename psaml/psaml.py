@@ -2,11 +2,12 @@
 # Iris Analysis
 #
 from pyspark import SparkContext
-from pyspark.sql import *
+from pyspark.ml import Model
 from pyspark.ml import Pipeline
-from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
+from pyspark.ml.regression import DecisionTreeRegressor
+from pyspark.sql import *
 
 
 # Helper: create data_info DataFrame from sample data (work item #5)
@@ -90,16 +91,13 @@ def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
     #  DataFrame.where() is an alias for .filter() which takes string conditions to filter Rows
 
 def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, data_info):
-    # -1) create SQLContext
-    sql_context = SQLContext(sc)
-
     # ##########################################################################################################
     #
     # 0) Verify input
     #
-    #  assert expSensitivity >= 0 (int)
-    #  assert ctrlSensitivity >= 0 (int)
-    #  assert dataInfo (DataFrame of the following format, one row for each column in the data model works on):
+    #  assert exp_sensitivity >= 0 (int)
+    #  assert ctrl_sensitivity >= 0 (int)
+    #  assert data_info (DataFrame of the following format, one row for each column in the data model works on):
     #
     #                                         DataFrame of Data columns
     #                     _____________________________________________________
@@ -116,6 +114,18 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     except AssertionError as e:
         raise ValueError(e.args)
 
+    try:
+        assert (type(sc) is SparkContext), "Invalid SparkContext"
+        assert (isinstance(model, Model)), "Invalid ML Model; Model given: {0}".format(str(type(model)))
+        assert (type(data_info) is DataFrame), "data_info is not a valid DataFrame"
+    except AssertionError as e:
+        raise TypeError(e.args)
+
+
+
+    # 0.5) create SQLContext
+    sql_context = SQLContext(sc)
+
     # ##########################################################################################################
     #
     # 1) Generate test data
@@ -127,8 +137,8 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     #
     # 2) Make predictions.
     #
-    # predictions = model.transform(testData)  #  but, we're not passing in dataInfo yet, so we'll treat
-    # dataInfo like already done testData
+    # predictions = model.transform(testData)  #  but, we're not passing in data_info yet, so we'll treat
+    # data_info like already done testData
     predictions = model.transform(data_info)
 
     # ##########################################################################################################
@@ -137,7 +147,7 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     #
     #  Output DataFrame should use the following format:
     #
-    #                                            dataframe name
+    #                                            DataFrame name
     #                     _______________________________________________________________
     # Column purpose     | prediction   | varColName   | expVariance   | ctrlVariance    |
     #                    |--------------|--------------|---------------|-----------------|

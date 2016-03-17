@@ -1,0 +1,67 @@
+# Use these instructions to debug the test script in the pyspark shell
+# from the PSAML root directory, run this command: `pyspark --packages com.databricks:spark-csv_2.11:1.3.0`
+
+# Then paste the following into the shell as needed:
+
+#
+# Iris Analysis
+#
+import os
+import sys
+
+from pyspark import SparkContext
+from pyspark.sql import SQLContext
+from pyspark.ml import Pipeline
+from pyspark.ml.regression import DecisionTreeRegressor
+from pyspark.ml.evaluation import RegressionEvaluator
+from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
+
+# Get parent directory of the tests directory
+parent_dir = os.path.abspath(os.getcwd())
+sys.path.append(os.path.join(parent_dir, 'psaml'))
+import psaml
+
+sc.addPyFile(os.path.join(parent_dir, 'psaml/psaml.py'))
+
+sql_context = SQLContext(sc)
+
+# header=false so the columns aren't named after the first row values
+# inferSchema=true so that data is read in as correct data type, not just strings
+data = sql_context.read.load('tests/resources/iris.csv', format='com.databricks.spark.csv', header='false', inferSchema='true')
+
+# now we create a vector of the input columns so they can be one column
+ignore = ['C4']  # ignore the output column
+assembler = VectorAssembler(inputCols=[x for x in data.columns if x not in ignore], outputCol='features')
+
+# Automatically identify categorical features, and index them.
+# We specify maxCategories so features with > 4 distinct values are treated as continuous.
+# (maxCategories is not set at the moment, however)
+feature_indexer = VectorIndexer(inputCol="features", outputCol="indexed")
+class_indexer = StringIndexer(inputCol="C4", outputCol="label")
+
+# Read in data for sensitivity analysis
+test_data = sql_context.read.load('tests/resources/iris_test_data.csv',
+                                  format='com.databricks.spark.csv',
+                                  header='false',
+                                  inferSchema='true')
+
+# Train a DecisionTree model.
+dt = DecisionTreeRegressor(featuresCol="indexed", labelCol="label")
+
+# Chain indexer and tree in a Pipeline
+pipeline = Pipeline(stages=[assembler, feature_indexer, class_indexer, dt])
+
+# Train model.  This also runs the indexer.
+model = pipeline.fit(data)
+
+####
+# I usually stop here
+####
+
+# Make predictions.
+predictions = psaml.do_continuous_input_analysis(sc, model, 1, 1, test_data.drop('C4'))
+
+# print (predictions)
+
+# Select example rows to display.
+predictions.select("prediction", "features").show()  # opt param: number of records to show
