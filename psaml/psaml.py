@@ -121,7 +121,15 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     except AssertionError as e:
         raise TypeError(e.args)
 
-
+    # This will be uncommented once we get the Test Data generation fixed, and start analyzing it instead
+    # of the sample data we were submitting. Calling this issue done.
+    #try:
+    #    assert (len(data_info.columns) == 4), \
+    #        "data_info is invalid; Len should be 4 instead of {0}".format(len(data_info.columns))
+    #    assert (set(data_info.columns) == {'colName', 'minValue', 'maxValue', 'shouldAnalyze'}), \
+    #        "data_info is invalid; Contains incorrect columns"
+    #except AssertionError as e:
+    #    raise RuntimeError(e.args)
 
     # 0.5) create SQLContext
     sql_context = SQLContext(sc)
