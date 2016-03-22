@@ -34,7 +34,7 @@ def make_data_info(sql, sample_data, cols_analyze, col_class):
     
 
 # 1b) Generate test data (work item #4)
-def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
+def _generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
     "build the test data from the prepped cols_* DataFrames which should make it easy"
     #  gather the cols to analyze first!
     exp_cols = data_info.where(data_info.shouldAnalyze==True).collect()
@@ -79,101 +79,74 @@ def generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info):
     return test_data
 
 
-    #  DataFrame.count() gives me number of rows (useful for looping)
-    #  DataFrame.collect() gives me a list of Rows 
-    #  Row members can be accessed by name, Row.colName, Row.minValue, etc
-    #  DataFrame.foreach(f) runs the f function on each Row of the DataFrame
-    #  DataFrame.printSchema() gives string of ASCII tree representing DataFrame, may be useful for doing input validation human-legible
-    #  DataFrame.schema() gives types within DataFrame, useful for asserting valid DataFrame format    
-    #  DataFrame.select(cols) gives a new DataFrame limited to the provided columns
-    #  DataFrame.selectExpr()
-    #  DataFrame.take(n) return the first n Rows as a list of Rows
-    #  DataFrame.where() is an alias for .filter() which takes string conditions to filter Rows
+def _format_output(sql, exp, ctrl, data_info, predictions):
+    """Used to take raw predictions and label with the variance levels that led to the prediction"""
+    #  NOTE: in some cases, a mapping from prediction to real-data label would be nice, such as iris, but seems to be awkward for numeric labels... use raw prediction for now
+    #  1) Package prediction with exp% and ctrl% used to acquire it
+    #       Indexes appear to be order-preserved... this will need tested on supercomputer and results diff'd
+    infos = data_info.collect()
+    preds = predictions.collect()
+    exp_idx = -1
+    ll = []
+    for i in range(0, len(preds)):
+        if (i % ((exp+1)*(ctrl+1))) == 0:
+            exp_idx = exp_idx + 1
+            while not infos[exp_idx].shouldAnalyze:
+                exp_idx = exp_idx + 1
+        e = 0
+        if exp <> 0:
+            e = float(i % (exp+1)) / float(exp)
+        c = 0
+        if ctrl <> 0:
+            c = float((i/(exp+1)) % (ctrl+1)) / float(ctrl)
+        l = []
+        l.append(preds[i].prediction)
+        l.append(infos[exp_idx].colName)
+        l.append(e)
+        l.append(c)
+        ll.append(l)
+    #  2) Take list of 1) results and make and return DataFrame
+    results = sql.createDataFrame(ll, schema=['Prediction', 'AnalyzedVariable', 'ExpSensitivity', 'CtrlSensitivity'])
+    return results
 
 def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, data_info):
     # ##########################################################################################################
     #
     # 0) Verify input
     #
-    #  assert exp_sensitivity >= 0 (int)
-    #  assert ctrl_sensitivity >= 0 (int)
-    #  assert data_info (DataFrame of the following format, one row for each column in the data model works on):
-    #
-    #                                         DataFrame of Data columns
-    #                     _____________________________________________________
-    # Column purpose     | colName   | minValue  | maxValue  | shouldAnalyze   |
-    #                    |-----------|-----------|-----------|-----------------|
-    # Column type        | string    | numeral   | numeral   | boolean         |
-    #                    |-----------|-----------|-----------|-----------------|
-    # Example record     | "petalW"  | 4.3       | 7.9       | true            |
-    #                    |___________|___________|___________|_________________|
-    #
     try:
         assert (exp_sensitivity >= 0), "Experiment Sensitivity must be a non-negative integer"
         assert (ctrl_sensitivity >= 0), "Control Variable Sensitivity must be a non-negative integer"
     except AssertionError as e:
         raise ValueError(e.args)
-
     try:
         assert (type(sc) is SparkContext), "Invalid SparkContext"
         assert (isinstance(model, Model)), "Invalid ML Model; Model given: {0}".format(str(type(model)))
         assert (type(data_info) is DataFrame), "data_info is not a valid DataFrame"
     except AssertionError as e:
         raise TypeError(e.args)
-
-    # This will be uncommented once we get the Test Data generation fixed, and start analyzing it instead
-    # of the sample data we were submitting. Calling this issue done.
-    #try:
-    #    assert (len(data_info.columns) == 4), \
-    #        "data_info is invalid; Len should be 4 instead of {0}".format(len(data_info.columns))
-    #    assert (set(data_info.columns) == {'colName', 'minValue', 'maxValue', 'shouldAnalyze'}), \
-    #        "data_info is invalid; Contains incorrect columns"
-    #except AssertionError as e:
-    #    raise RuntimeError(e.args)
-
+    try:
+        assert (len(data_info.columns) == 4), \
+            "data_info is invalid; Len should be 4 instead of {0}".format(len(data_info.columns))
+        assert (set(data_info.columns) == {'colName', 'minValue', 'maxValue', 'shouldAnalyze'}), \
+            "data_info is invalid; Contains incorrect columns"
+    except AssertionError as e:
+        raise RuntimeError(e.args)
     # 0.5) create SQLContext
-    sql_context = SQLContext(sc)
-
+    sql = SQLContext(sc)
     # ##########################################################################################################
     #
     # 1) Generate test data
     #
-
-    #  test_data = generate_analysis_data(sql_context, exp_sensitivity, ctrl_sensitivity, data_info)
-
+    test_data = _generate_analysis_data(sql, exp_sensitivity, ctrl_sensitivity, data_info)
     # ##########################################################################################################
     #
     # 2) Make predictions.
     #
-    # predictions = model.transform(testData)  #  but, we're not passing in data_info yet, so we'll treat
-    # data_info like already done testData
-    predictions = model.transform(data_info)
-
+    predictions = model.transform(test_data)
     # ##########################################################################################################
     #
     # 3) Transform predictions into output DataFrame
     #
-    #  Output DataFrame should use the following format:
-    #
-    #                                            DataFrame name
-    #                     _______________________________________________________________
-    # Column purpose     | prediction   | varColName   | expVariance   | ctrlVariance    |
-    #                    |--------------|--------------|---------------|-----------------|
-    # Column types       | <classType>  | string       | num (0.0-1.0) | num (0.0-1.0)   |
-    #                    |--------------|--------------|---------------|-----------------|
-    # Example record     | "iris-setosa"| "PetalW"     | 0.7           | 0.2             |
-    #                    |______________|______________|_______________|_________________|
-    #
-    # In the above example record, we get "iris-setosa" as a prediction when holding "PetalW" at 70% of potential
-    # value, and everything else at 20%
-    #
-    #     varianceData = new DataFrame after above format
-    #     for ( x : 0 ... ctrlSensitivity ), inclusive
-    #        foreach ( varCol : varCol.shouldAnalyze == true )
-    #           for ( y : 0 ... expSensitivity ), inclusive
-    #              translate row from predictions[n] to  varianceData[n]
-    #              #  they will end up being the same size
-    #
-
-    # return varianceData  # but for now, just return predictions so the code actually interprets
-    return predictions
+    packaged_predictions = _format_output(sql, exp_sensitivity, ctrl_sensitivity, data_info, predictions)
+    return packaged_predictions
