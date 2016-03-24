@@ -11,6 +11,9 @@ from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
+from plotly.offline import download_plotlyjs, init_notebook_mode, iplot
+from plotly.graph_objs import *
+
 # init
 sc = SparkContext('local', 'Test_PSAML')
 
@@ -52,10 +55,13 @@ pipeline = Pipeline(stages=[assembler, feature_indexer, class_indexer, dt])
 # Train model.  This also runs the indexer.
 model = pipeline.fit(data)
 
+# Get our data_info frame, courtesy of PSAML
+data_info = psaml.make_data_info(sql_context, test_data, ['C0', 'C1', 'C2', 'C3'], 'C4')
+
 # Make predictions.
-predictions = psaml.do_continuous_input_analysis(sc, model, 1, 1, test_data.drop('C4'))
+predictions = psaml.do_continuous_input_analysis(sc, model, 1, 1, data_info)
 
 # print (predictions)
 
 # Select example rows to display.
-predictions.select("prediction", "features").show()  # opt param: number of records to show
+predictions.show()  # opt param: number of records to show
