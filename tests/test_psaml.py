@@ -11,8 +11,10 @@ from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 
-from plotly.offline import download_plotlyjs, init_notebook_mode, iplot
-from plotly.graph_objs import *
+from plotly.offline import download_plotlyjs, init_notebook_mode, iplot, plot
+import plotly
+import plotly.graph_objs as go
+import pandas as pd
 
 # init
 sc = SparkContext('local', 'Test_PSAML')
@@ -56,12 +58,34 @@ pipeline = Pipeline(stages=[assembler, feature_indexer, class_indexer, dt])
 model = pipeline.fit(data)
 
 # Get our data_info frame, courtesy of PSAML
-data_info = psaml.make_data_info(sql_context, test_data, ['C0', 'C1', 'C2', 'C3'], 'C4')
+cols_to_analyze = ['C0', 'C1', 'C2', 'C3']
+data_info = psaml.make_data_info(sql_context, test_data, cols_to_analyze, 'C4')
 
 # Make predictions.
-predictions = psaml.do_continuous_input_analysis(sc, model, 1, 1, data_info)
+predictions = psaml.do_continuous_input_analysis(sc, model, 5, 5, data_info)
 
-# print (predictions)
 
 # Select example rows to display.
-predictions.show()  # opt param: number of records to show
+# predictions.show()  # opt param: number of records to show
+
+fig = plotly.tools.make_subplots(rows=len(cols_to_analyze), cols=1)
+sql_context.registerDataFrameAsTable(predictions, "predictions")
+
+for i in range(len(cols_to_analyze)):
+    ctrl_sensitivity_values = sql_context.sql("SELECT DISTINCT CtrlSensitivity FROM predictions WHERE AnalyzedVariable='{0}'".format(cols_to_analyze[i])).toPandas().sort('CtrlSensitivity').CtrlSensitivity
+    for ctrl_val in ctrl_sensitivity_values:
+        temp = sql_context.sql("SELECT Prediction, ExpSensitivity FROM predictions WHERE AnalyzedVariable='{0}' AND CtrlSensitivity={1}".format(cols_to_analyze[i], ctrl_val)).toPandas()
+
+        trace = go.Scatter (
+            x = temp.ExpSensitivity,
+            y = temp.Prediction,
+            name = '{0} - Ctrl: {1}'.format(cols_to_analyze[i], ctrl_val),
+            line=dict(
+                shape='spline'
+            )
+        )
+
+        fig.append_trace(trace, i+1, 1)
+
+
+plot(fig, filename='basic-line.html')
