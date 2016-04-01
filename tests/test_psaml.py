@@ -39,7 +39,7 @@ assembler = VectorAssembler(inputCols=[x for x in data.columns if x not in ignor
 # Automatically identify categorical features, and index them.
 # We specify maxCategories so features with > 4 distinct values are treated as continuous.
 # (maxCategories is not set at the moment, however)
-feature_indexer = VectorIndexer(inputCol="features", outputCol="indexed")
+#  feature_indexer = VectorIndexer(inputCol="features", outputCol="indexed")
 class_indexer = StringIndexer(inputCol="C4", outputCol="label")
 
 # Read in data for sensitivity analysis
@@ -49,10 +49,10 @@ test_data = sql_context.read.load('tests/resources/iris_test_data.csv',
                                   inferSchema='true')
 
 # Train a DecisionTree model.
-dt = DecisionTreeRegressor(featuresCol="indexed", labelCol="label")
+dt = DecisionTreeRegressor(featuresCol="features", labelCol="label")
 
 # Chain indexer and tree in a Pipeline
-pipeline = Pipeline(stages=[assembler, feature_indexer, class_indexer, dt])
+pipeline = Pipeline(stages=[assembler, class_indexer, dt])
 
 # Train model.  This also runs the indexer.
 model = pipeline.fit(data)
