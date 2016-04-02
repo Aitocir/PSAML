@@ -172,9 +172,9 @@ def do_continuous_input_analysis(sc, model, exp_sensitivity, ctrl_sensitivity, d
     except AssertionError as e:
         raise TypeError(e.args)
     try:
-        assert (len(data_info.columns) == 4), \
-            "data_info is invalid; Len should be 4 instead of {0}".format(len(data_info.columns))
-        assert (set(data_info.columns) == {'colName', 'minValue', 'maxValue', 'shouldAnalyze'}), \
+        assert (len(data_info.columns) == 6), \
+            "data_info is invalid; Len should be 6 instead of {0}".format(len(data_info.columns))
+        assert (set(data_info.columns) == {'colName', 'minValue', 'maxValue', 'shouldAnalyze', 'isCategorical', 'categoricalValues'}), \
             "data_info is invalid; Contains incorrect columns"
     except AssertionError as e:
         raise RuntimeError(e.args)
