@@ -17,6 +17,6 @@ The test_psaml file is useful for just that: testing. It is suppose to mimic a P
 
 ---
 
-Running the script:
+To use CSV files as input data, include the following in your spark-submit or pyspark launch:
 
-`$ {SPARK_DIR}/bin/spark-submit --master local[2] --packages com.databricks:spark-csv_2.11:1.3.0 iris_analysis.py`
+` --packages com.databricks:spark-csv_2.11:1.3.0 `
