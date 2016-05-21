@@ -1,2 +1,5 @@
 *.pyc
 tests/*.html
+
+# Stupid Mac
+.DS_Store
