@@ -94,10 +94,10 @@ def _format_output(sql, exp, ctrl, data_info, predictions):
             while not infos[exp_idx].shouldAnalyze:
                 exp_idx = exp_idx + 1
         e = 0
-        if exp <> 0:
+        if exp != 0:
             e = float(i % (exp+1)) / float(exp)
         c = 0
-        if ctrl <> 0:
+        if ctrl != 0:
             c = float((i/(exp+1)) % (ctrl+1)) / float(ctrl)
         l = []
         l.append(preds[i].prediction)

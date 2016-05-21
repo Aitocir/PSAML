@@ -88,4 +88,4 @@ for i in range(len(cols_to_analyze)):
         fig.append_trace(trace, i+1, 1)
 
 
-plot(fig, filename='basic-line.html')
+plot(fig, filename='tests/basic-line.html')
